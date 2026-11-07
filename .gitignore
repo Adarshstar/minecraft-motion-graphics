@@ -1,0 +1,6 @@
+*.blend
+*.mp4
+*.png
+output/
+__pycache__/
+*.log

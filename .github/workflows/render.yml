@@ -1,0 +1,60 @@
+name: Render Minecraft Motion Graphics
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # daily render refresh
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    # keep CPU rendering on self-hosted/standard runners — no GPU assumed
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Blender + ffmpeg + xvfb
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y blender ffmpeg xvfb
+
+      - name: Build scene + render frames (Blender Cycles, CPU)
+        run: |
+          xvfb-run -a blender -b --python scripts/make_minecraft_scene.py
+        # 72 frames at 720p CPU — allow generous timeout
+        timeout-minutes: 120
+
+      - name: Encode frames to MP4
+        run: |
+          mkdir -p output/video
+          ffmpeg -y -framerate 30 -i output/frames/minecraft_%04d.png \
+            -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p \
+            -movflags +faststart \
+            output/video/minecraft.mp4
+
+      - name: Upload rendered frames
+        uses: actions/upload-artifact@v4
+        with:
+          name: minecraft-frames
+          path: output/frames/*.png
+          retention-days: 7
+
+      - name: Upload rendered video
+        uses: actions/upload-artifact@v4
+        with:
+          name: minecraft-video
+          path: output/video/minecraft.mp4
+          retention-days: 7
+
+      - name: Print render summary
+        run: |
+          echo "Frames rendered: $(ls output/frames/*.png 2>/dev/null | wc -l)"
+          if [ -f output/video/minecraft.mp4 ]; then
+            echo "Video: output/video/minecraft.mp4"
+            ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 output/video/minecraft.mp4 2>/dev/null || true
+          fi
