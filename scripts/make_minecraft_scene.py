@@ -23,11 +23,17 @@ import math
 import os
 from mathutils import Vector
 
-WORKSPACE = "/home/ubuntu/.openclaw/workspace/motion"
-BLEND_OUT = os.path.join(WORKSPACE, "scenes", "minecraft_demo.blend")
-FRAME_DIR = os.path.join(WORKSPACE, "output", "frames")
-VIDEO_OUT = os.path.join(WORKSPACE, "output", "video", "minecraft.mp4")
-os.makedirs(os.path.dirname(BLEND_OUT), exist_ok=True)
+# Paths resolve relative to this script so the file works both locally
+# and on GitHub Actions runners (no hardcoded /home/ubuntu paths).
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(SCRIPTS_DIR)
+SCENES_DIR = os.path.join(REPO_ROOT, "scenes")
+FRAME_DIR = os.path.join(REPO_ROOT, "output", "frames")
+VIDEO_OUT = os.path.join(REPO_ROOT, "output", "video", "minecraft.mp4")
+BLEND_OUT = os.path.join(SCENES_DIR, "minecraft_demo.blend")
+os.makedirs(SCENES_DIR, exist_ok=True)
+os.makedirs(FRAME_DIR, exist_ok=True)
+os.makedirs(os.path.dirname(VIDEO_OUT), exist_ok=True)
 os.makedirs(FRAME_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(VIDEO_OUT), exist_ok=True)
 
